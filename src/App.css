@@ -1,38 +1,217 @@
-.App {
-  text-align: center;
+/* Globální reset a základní nastavení */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: Arial, sans-serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Kontejner s generovaným pozadím (SVG gradient jako data URI) */
+.app-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%231e3c72;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%232a5298;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grad)'/%3E%3C/svg%3E");
+  background-size: cover;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Overlay pro jemné zatmavení pozadí */
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+/* Status spojení */
+.connection-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Kontejner pro hlavní obsah – dvě části */
+.content {
+  position: relative;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  height: 100%;
+  padding: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+/* Panel */
+.panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 10px;
+  overflow-y: auto;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.left-panel {
+  flex: 0 0 40%;
+  margin-right: 10px;
+}
+
+.right-panel {
+  flex: 0 0 60%;
+  margin-left: 10px;
+}
+
+/* Nadpisy a text */
+h2, h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.info-card p,
+.multiplayer-info p {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Styl pro obrázek tanku */
+.tank-image img {
+  width: 100%;
+  border-radius: 4px;
+  margin-top: 15px;
+}
+
+/* Username input */
+.username-input {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.username-input input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.username-input button {
+  padding: 8px 12px;
+  background: #1e3c72;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.username-input button:hover {
+  background: #162b5e;
+}
+
+/* Skin Selector Styles */
+.skin-selector {
+  margin-top: 20px;
+}
+
+.skin-selector h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.skin-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.skin-button {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  padding: 2px;
+  transition: border-color 0.3s, transform 0.2s;
+  background: none;
+}
+
+.skin-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.skin-button.selected {
+  border-color: #ffffff;
+  transform: scale(1.1);
+}
+
+.selectedSkin {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Server list styling s orámováním a stínem */
+.server-list {
+  list-style: none;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.server-list li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #333;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.server-list li:hover {
+  background: #e0e0e0;
+}
+
+/* Create room input */
+.create-room {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.create-room input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.create-room button {
+  padding: 8px 12px;
+  background: #1e3c72;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.create-room button:hover {
+  background: #162b5e;
 }
