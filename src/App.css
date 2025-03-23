@@ -70,6 +70,7 @@ html, body, #root {
 .right-panel {
   flex: 0 0 60%;
   margin-left: 10px;
+  max-width: 550px;
 }
 
 /* Nadpisy a text */
@@ -96,6 +97,7 @@ h2, h3 {
 .username-input {
   margin-top: 15px;
   display: flex;
+  max-width: 20rem;
   gap: 10px;
 }
 
@@ -192,6 +194,7 @@ h2, h3 {
 .create-room {
   display: flex;
   gap: 10px;
+  max-width: 20rem;
   margin-bottom: 20px;
 }
 

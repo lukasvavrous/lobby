@@ -9,8 +9,8 @@ const io = socketIO(server, { cors: { origin: "*" } });
 // Slouží statické soubory ze složky public
 app.use(express.static('public'));
 
-// Ukládáme stav uživatelů a room
-let users = {}; // Klíč: socket.id, hodnota: { id, name, room }
+// Udržujeme stav uživatelů a room
+let users = {}; // Klíč: socket.id, hodnota: { id, name, room, skin }
 let rooms = {}; // Klíč: room id, hodnota: { id, name, creator, members: [socket.id, ...] }
 
 function broadcastUsers() {
@@ -24,14 +24,34 @@ function broadcastRooms() {
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
-  // Přijetí nastavení jména hráče
+  // Nastavení jména hráče
   socket.on("setUsername", (name) => {
-    users[socket.id] = { id: socket.id, name: name, room: null };
+    users[socket.id] = { id: socket.id, name: name, room: null, skin: null };
     broadcastUsers();
   });
 
-  // Vytvoření nové roomy – room id je generováno náhodně
+  // Aktualizace skinu
+  socket.on("updateSkin", (skinId) => {
+    if (users[socket.id]) {
+      users[socket.id].skin = skinId;
+      broadcastUsers();
+      console.log(`User ${socket.id} updated skin to ${skinId}`);
+    }
+  });
+
+  // Vytvoření nové roomy
   socket.on("createRoom", (roomName) => {
+    // Pokud uživatel je v jiné roomce, odebereme ho
+    if (users[socket.id] && users[socket.id].room) {
+      const prevRoom = users[socket.id].room;
+      if (rooms[prevRoom]) {
+        rooms[prevRoom].members = rooms[prevRoom].members.filter(id => id !== socket.id);
+        socket.leave(prevRoom);
+        if (rooms[prevRoom].members.length === 0) {
+          delete rooms[prevRoom];
+        }
+      }
+    }
     let roomId = Math.random().toString(36).substring(2, 8);
     rooms[roomId] = { id: roomId, name: roomName, creator: socket.id, members: [socket.id] };
     if (users[socket.id]) {
@@ -47,11 +67,22 @@ io.on("connection", (socket) => {
   // Připojení do existující roomy
   socket.on("joinRoom", (roomId) => {
     if (rooms[roomId]) {
-      if (!rooms[roomId].members.includes(socket.id)) {
-        rooms[roomId].members.push(socket.id);
+      // Pokud uživatel je v jiné roomce, odebereme ho nejdřív
+      if (users[socket.id] && users[socket.id].room && users[socket.id].room !== roomId) {
+        let prevRoom = users[socket.id].room;
+        if (rooms[prevRoom]) {
+          rooms[prevRoom].members = rooms[prevRoom].members.filter(id => id !== socket.id);
+          socket.leave(prevRoom);
+          if (rooms[prevRoom].members.length === 0) {
+            delete rooms[prevRoom];
+          }
+        }
       }
       if (users[socket.id]) {
         users[socket.id].room = roomId;
+      }
+      if (!rooms[roomId].members.includes(socket.id)) {
+        rooms[roomId].members.push(socket.id);
       }
       socket.join(roomId);
       broadcastRooms();
@@ -63,17 +94,20 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Při odpojení odstraníme uživatele a z room
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
-    delete users[socket.id];
-    // Odstranit uživatele z room a případně smazat prázdné roomy
-    for (const roomId in rooms) {
-      let room = rooms[roomId];
-      room.members = room.members.filter(memberId => memberId !== socket.id);
-      if (room.members.length === 0) {
-        delete rooms[roomId];
+    if (users[socket.id] && users[socket.id].room) {
+      let roomId = users[socket.id].room;
+      if (rooms[roomId]) {
+        rooms[roomId].members = rooms[roomId].members.filter(id => id !== socket.id);
+        socket.leave(roomId);
+        if (rooms[roomId].members.length === 0) {
+          delete rooms[roomId];
+        }
       }
     }
+    delete users[socket.id];
     broadcastUsers();
     broadcastRooms();
   });

@@ -26,7 +26,7 @@ function SkinSelector({ selectedSkin, onSelectSkin }) {
           </button>
         ))}
       </div>
-      <p className='selectedSkin'>{skinOptions[selectedSkin - 1].alt}</p>
+      <p className="selectedSkin">{skinOptions[selectedSkin - 1].alt}</p>
     </div>
   );
 }
@@ -48,18 +48,22 @@ function RightPanel({ socket }) {
   const [newRoomName, setNewRoomName] = useState('');
   const [users, setUsers] = useState([]);
 
-  // Nastavení socket eventů
+  // Odeslání update skinu na server při změně
+  useEffect(() => {
+    if (socket) {
+      socket.emit("updateSkin", selectedSkin);
+    }
+  }, [selectedSkin, socket]);
+
+  // Nastavení socket eventů pro aktualizaci seznamu uživatelů a room
   useEffect(() => {
     if (!socket) return;
-
     socket.on("usersUpdate", (updatedUsers) => {
       setUsers(updatedUsers);
     });
-
     socket.on("roomsUpdate", (updatedRooms) => {
       setRooms(updatedRooms);
     });
-
     return () => {
       socket.off("usersUpdate");
       socket.off("roomsUpdate");
@@ -88,7 +92,6 @@ function RightPanel({ socket }) {
   return (
     <div className="panel right-panel">
       <div className="info-section">
-        <h2>Informace o hráči a tanku</h2>
         <div className="info-card">
           <p><strong>Jméno:</strong> {username || "Neznámý hráč"}</p>
           <p><strong>Tank:</strong> T-90</p>
@@ -102,7 +105,7 @@ function RightPanel({ socket }) {
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
           />
-          <button onClick={handleSetUsername}>Nastavit jméno</button>
+          <button onClick={handleSetUsername}>Nastavit</button>
         </div>
         <SkinSelector selectedSkin={selectedSkin} onSelectSkin={setSelectedSkin} />
       </div>
@@ -115,13 +118,21 @@ function RightPanel({ socket }) {
             value={newRoomName} 
             onChange={(e) => setNewRoomName(e.target.value)} 
           />
-          <button onClick={handleCreateRoom}>Vytvořit room</button>
+          <button onClick={handleCreateRoom}>Vytvořit</button>
         </div>
         <ul className="server-list">
           {rooms.map(room => (
             <li key={room.id} onClick={() => handleJoinRoom(room.id)}>
               <span className="room-name">{room.name}</span>
               <span className="room-members">({room.members.length} hráčů)</span>
+            </li>
+          ))}
+        </ul>
+        <h2>Připojení hráči</h2>
+        <ul className="user-list">
+          {users.map(user => (
+            <li key={user.id}>
+              {user.name} {user.room ? `(Room: ${user.room})` : ''}
             </li>
           ))}
         </ul>
