@@ -11,6 +11,21 @@ const skinOptions = [
   { id: 6, src: '/assets/T90F.png', alt: 'T90F' },
 ];
 
+function useUsernameController(socket) {
+  const [username, setUsername] = useState(sessionStorage.getItem("username") || "");
+
+  useEffect(() => {
+    if (username) {
+      sessionStorage.setItem("username", username);
+      if (socket) {
+        socket.emit("setUsername", username);
+      }
+    }
+  }, [username, socket]);
+
+  return [username, setUsername];
+}
+
 function SkinSelector({ selectedSkin, onSelectSkin }) {
   return (
     <div className="skin-selector">
@@ -31,9 +46,9 @@ function SkinSelector({ selectedSkin, onSelectSkin }) {
   );
 }
 
-function LeftPanel() {
+function GamePreview() {
   return (
-    <div className="panel left-panel">
+    <div className="panel game-preview">
       <div className="tank-image">
         <img src="/tank.webp" alt="Tank" />
       </div>
@@ -41,12 +56,8 @@ function LeftPanel() {
   );
 }
 
-function RightPanel({ socket }) {
+function PlayerInfo({ socket, username }) {
   const [selectedSkin, setSelectedSkin] = useState(1);
-  const [username, setUsername] = useState('');
-  const [rooms, setRooms] = useState([]);
-  const [newRoomName, setNewRoomName] = useState('');
-  const [users, setUsers] = useState([]);
 
   // Odeslání update skinu na server při změně
   useEffect(() => {
@@ -54,6 +65,27 @@ function RightPanel({ socket }) {
       socket.emit("updateSkin", selectedSkin);
     }
   }, [selectedSkin, socket]);
+
+  // Nastavení socket eventů pro aktualizaci seznamu uživatelů a room
+  return (
+    <div className="panel right-panel">
+      <div className="info-section">
+        <div className="info-card">
+          <p><strong>Jméno:</strong> {username || "Neznámý hráč"}</p>
+          <p><strong>Tank:</strong> T-90</p>
+        </div>
+       
+        <SkinSelector selectedSkin={selectedSkin} onSelectSkin={setSelectedSkin} />
+      </div>
+    </div>
+  );
+}
+
+
+function Rooms({ socket }) {
+  const [rooms, setRooms] = useState([]);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [users, setUsers] = useState([]);
 
   // Nastavení socket eventů pro aktualizaci seznamu uživatelů a room
   useEffect(() => {
@@ -70,12 +102,6 @@ function RightPanel({ socket }) {
     };
   }, [socket]);
 
-  const handleSetUsername = () => {
-    if (socket && username.trim() !== '') {
-      socket.emit("setUsername", username.trim());
-    }
-  };
-
   const handleCreateRoom = () => {
     if (socket && newRoomName.trim() !== '') {
       socket.emit("createRoom", newRoomName.trim());
@@ -91,32 +117,14 @@ function RightPanel({ socket }) {
 
   return (
     <div className="panel right-panel">
-      <div className="info-section">
-        <div className="info-card">
-          <p><strong>Jméno:</strong> {username || "Neznámý hráč"}</p>
-          <p><strong>Tank:</strong> T-90</p>
-          <p><strong>Level:</strong> 5</p>
-          <p><strong>HP:</strong> 100</p>
-        </div>
-        <div className="username-input">
-          <input 
-            type="text" 
-            placeholder="Zadej jméno hráče" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-          />
-          <button onClick={handleSetUsername}>Nastavit</button>
-        </div>
-        <SkinSelector selectedSkin={selectedSkin} onSelectSkin={setSelectedSkin} />
-      </div>
       <div className="server-section">
-        <h2>Roomy</h2>
+        <h2>Rooms</h2>
         <div className="create-room">
-          <input 
-            type="text" 
-            placeholder="Název roomy" 
-            value={newRoomName} 
-            onChange={(e) => setNewRoomName(e.target.value)} 
+          <input
+            type="text"
+            placeholder="Název roomy"
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
           />
           <button onClick={handleCreateRoom}>Vytvořit</button>
         </div>
@@ -128,7 +136,7 @@ function RightPanel({ socket }) {
             </li>
           ))}
         </ul>
-        <h2>Připojení hráči</h2>
+        <h2>Připojení hráči: {users.length}</h2>
         <ul className="user-list">
           {users.map(user => (
             <li key={user.id}>
@@ -136,31 +144,102 @@ function RightPanel({ socket }) {
             </li>
           ))}
         </ul>
-        <h2>Multiplayer informace</h2>
-        <div className="multiplayer-info">
-          <p><strong>Aktuální hra:</strong> T-90 Battle</p>
-          <p><strong>Hráčů:</strong> {users.length}</p>
-          <p><strong>Ping:</strong> 45 ms</p>
-        </div>
       </div>
     </div>
   );
 }
 
+const NameElement = ({ setUsername }) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleSetUsername = () => {
+    if (inputValue.trim() !== "") {
+      setUsername(inputValue.trim());
+    }
+  };
+
+  return (
+    <div className="loginWrapper">
+      <div className="loginContent">
+        <p>Zvolte si jméno</p>
+        <div className="username-input">
+          <input
+            type="text"
+            placeholder="Zadej jméno hráče"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          <button onClick={handleSetUsername}>Nastavit</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function Chat({ socket, username }) {
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("chatMessage", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+    return () => {
+      socket.off("chatMessage");
+    };
+  }, [socket]);
+
+  const sendMessage = () => {
+    if (socket && message.trim() !== '') {
+      // Odesíláme zprávu jako objekt { user, text }
+      socket.emit("chatMessage", { user: username, text: message.trim() });
+      setMessage('');
+    }
+  };
+
+  return (
+    <div className="panel chat-panel">
+      <div className="chat-messages">
+        {messages.map((msg, idx) => (
+          <div key={idx} className="chat-message">
+            <strong>{msg.user}:</strong> {msg.text}
+          </div>
+        ))}
+      </div>
+      <div className="chat-input">
+        <input
+          type="text"
+          placeholder="Napište zprávu..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+        />
+        <button onClick={sendMessage}>Odeslat</button>
+      </div>
+    </div>
+  );
+}
+
+
 function App() {
   const [connectionStatus, setConnectionStatus] = useState("Disconnected");
   const [socket, setSocket] = useState(null);
+  const [username, setUsername] = useUsernameController(socket);
 
   useEffect(() => {
     const sock = io("http://localhost:5000");
     setSocket(sock);
+    
     sock.on("connect", () => {
       setConnectionStatus("Connected");
       console.log("Connected:", sock.id);
     });
+
     sock.on("disconnect", () => {
       setConnectionStatus("Disconnected");
     });
+
     return () => sock.close();
   }, []);
 
@@ -170,12 +249,17 @@ function App() {
       <div className="connection-status">
         <p>Status spojení: {connectionStatus}</p>
       </div>
-      <div className="content">
-        <LeftPanel />
-        <RightPanel socket={socket} />
-      </div>
+      {!username ? (
+        <NameElement setUsername={setUsername} />
+      ) : (
+        <div className="content">
+          <GamePreview />
+          <PlayerInfo socket={socket} username={username} />
+          <Rooms socket={socket} />
+          <Chat socket={socket} username={username} />
+        </div>
+      )}
     </div>
   );
 }
-
 export default App;

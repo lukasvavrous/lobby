@@ -39,6 +39,15 @@ io.on("connection", (socket) => {
     }
   });
 
+
+// chatMessage
+  socket.on("chatMessage", (msg) => {
+    // Přepošleme zprávu všem klientům
+    io.emit("chatMessage", msg);
+    console.log(`Chat message from ${socket.id}:`, msg);
+  });
+
+
   // Vytvoření nové roomy
   socket.on("createRoom", (roomName) => {
     // Pokud uživatel je v jiné roomce, odebereme ho
