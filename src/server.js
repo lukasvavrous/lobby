@@ -24,6 +24,9 @@ function broadcastRooms() {
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
+  socket.emit("roomsUpdate", Object.values(rooms)); // přidat
+  socket.emit("usersUpdate", Object.values(users)); // přidat
+
   // Nastavení jména hráče
   socket.on("setUsername", (name) => {
     users[socket.id] = { id: socket.id, name: name, room: null, skin: null };
@@ -90,6 +93,7 @@ io.on("connection", (socket) => {
       }
       if (users[socket.id]) {
         users[socket.id].room = roomId;
+        users[socket.id].roomName = rooms[roomId].name;
       }
       if (!rooms[roomId].members.includes(socket.id)) {
         rooms[roomId].members.push(socket.id);

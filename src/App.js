@@ -116,10 +116,26 @@ function Rooms({ socket }) {
         <ul className="user-list">
           {users.map(user => (
             <li key={user.id}>
-              {user.name} {user.room ? `( ${user.roomName} )` : ''}
+              {user.name} {user.room ? `( ${user.roomName ?? 'Alone'} )` : ''}
             </li>
           ))}
         </ul>
+
+        {rooms.map(room => {
+          const playersInRoom = users.filter(u => u.room === room.id); 
+          return (
+            <div key={room.name} className="room">
+              <h3>
+                {room.name} ({playersInRoom.length})
+              </h3>
+              <ul>
+                {playersInRoom.map(player => (
+                  <li key={player.id}>{player.name}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

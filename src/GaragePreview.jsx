@@ -84,15 +84,6 @@ const GaragePreview = ({ selectedSkin, username, players = [] }) => {
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    // renderer.outputEncoding = THREE.sRGBEncoding;
-
-    renderer.setPixelRatio(window.devicePixelRatio);
-
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
@@ -265,8 +256,6 @@ const GaragePreview = ({ selectedSkin, username, players = [] }) => {
     const dict = otherTanksRef.current;
     const enemyTanks = Object.values(dict);
     const n = enemyTanks.length;
-
-    console.log("Create position for tanks:" +n)
     const center = new THREE.Vector3(0, 0.6, 0);
     if (n === 0) return;
     if (n === 1) {
