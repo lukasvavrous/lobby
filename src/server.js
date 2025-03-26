@@ -65,6 +65,7 @@ io.on("connection", (socket) => {
     rooms[roomId] = { id: roomId, name: roomName, creator: socket.id, members: [socket.id] };
     if (users[socket.id]) {
       users[socket.id].room = roomId;
+      users[socket.id].roomName = roomName;
     }
     socket.join(roomId);
     broadcastRooms();
